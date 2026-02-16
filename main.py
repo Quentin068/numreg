@@ -1,130 +1,121 @@
-from math import sqrt
+def regression():
+    print("\n" * 5)
+    print("=== REGRESSION (3 dec) ===")
 
-
-def calculs_complets(x, y):
-    n = len(x)
-    if n != len(y):
-        print("Erreur: Tailles differentes")
+    # --- 1. Saisie ---
+    try:
+        print("\nEntrer X (espaces):")
+        lx = [float(k) for k in input("> ").split()]
+        print("Entrer Y (espaces):")
+        ly = [float(k) for k in input("> ").split()]
+    except:
+        print("! Erreur de saisie !")
         return
 
-    # --- 1. Moyennes ---
-    mx = sum(x) / n
-    my = sum(y) / n
+    n = len(lx)
+    if n != len(ly) or n < 2:
+        print("! Erreur taille !")
+        return
 
-    # --- 2. Calcul de a et b (Pente et Ordonnée) ---
+    # --- 2. Calculs Moyennes ---
+    mx = sum(lx) / n
+    my = sum(ly) / n
+
+    # --- 3. Calculs Pente (a) et Ordonnee (b) ---
     s_xx = 0
     s_xy = 0
     for i in range(n):
-        s_xx += (x[i] - mx) ** 2
-        s_xy += (x[i] - mx) * (y[i] - my)
+        s_xx += (lx[i] - mx) ** 2
+        s_xy += (lx[i] - mx) * (ly[i] - my)
 
-    # Sécurité division par zéro
     if s_xx == 0:
-        print("Erreur: X est constant")
+        print("Erreur: X constant")
         return
 
     a = s_xy / s_xx
     b = my - a * mx
 
-    # --- 3. Initialisation des Sommes ---
-    sc_res = 0  # Somme Carrés Résiduelle
-    sc_reg = 0  # Somme Carrés Régression (Expliquée)
-    sc_tot = 0  # Somme Carrés Totale
+    # --- 4. Boucle Détails (Affichage point par point) ---
+    print("\n" + "=" * 29)
+    print("   DETAIL PAR POINT")
+    print("=" * 29)
 
-    # --- 4. Boucle : Détail ligne par ligne ---
-    print("\n" + "=" * 20)
-    print("DETAIL POINT PAR POINT")
-    print("=" * 20)
+    sc_res = 0
+    sc_reg = 0
+    sc_tot = 0
 
     for i in range(n):
         # Ecarts simples
-        xi_mx = x[i] - mx
-        yi_my = y[i] - my
+        dx = lx[i] - mx
+        dy = ly[i] - my
 
-        # Carrés et produits croisés
-        xi_mx_2 = xi_mx ** 2
-        prod_xy = xi_mx * yi_my
+        # Carrés / Produits
+        dx2 = dx ** 2
+        dxy = dx * dy
 
-        # Prédiction (y chapeau) et Résidus
-        y_chap = a * x[i] + b
-        res = y[i] - y_chap  # yi - ^yi
-        res_2 = res ** 2  # (yi - ^yi)^2
+        # Prédiction / Résidu
+        y_ch = a * lx[i] + b
+        res = ly[i] - y_ch
+        res2 = res ** 2
 
-        # Ecart modèle / moyenne
-        ych_my = y_chap - my  # ^yi - y
-        ych_my_2 = ych_my ** 2  # (^yi - y)^2
+        # Ecart expliqué
+        y_ch_my = y_ch - my
+        ych_my2 = y_ch_my ** 2
 
-        # Mise à jour des sommes totales
-        sc_res += res_2
-        sc_reg += ych_my_2
-        sc_tot += (y[i] - my) ** 2
+        # Sommes totales
+        sc_res += res2
+        sc_reg += ych_my2
+        sc_tot += (ly[i] - my) ** 2
 
-        # --- Affichage compact pour l'écran ---
-        print(f"--- Point {i + 1} ---")
-        # x_i - x | y_i - y
-        print(f"dx:{xi_mx:.2f} | dy:{yi_my:.2f}")
-        # (x_i - x)^2 | (x_i-x)(y_i-y)
-        print(f"dx2:{xi_mx_2:.2f}| dxy:{prod_xy:.2f}")
-        # ^y_i | y_i - ^y_i (Residu)
-        print(f"^y:{y_chap:.2f} | Res:{res:.2f}")
-        # (y_i - ^y_i)^2 (SCRes partiel)
-        print(f"Res2:{res_2:.2f}")
-        # ^y_i - y | (^y_i - y)^2 (SCReg partiel)
-        print(f"Expl:{ych_my:.2f} | Exp2:{ych_my_2:.2f}")
+        # --- Affichage Bloc (3 décimales) ---
+        print(f"------- Pt {i + 1} -------")
+        # Ecarts simples
+        print(f"dx :{dx:.3f} | dy :{dy:.3f}")
+        # Carrés de X et Produit croisé
+        print(f"dx²:{dx2:.3f} | dxy:{dxy:.3f}")
+        # Prédiction et Résidu
+        print(f"^y :{y_ch:.3f} | Res:{res:.3f}")
+        # Termes pour ANOVA (Residu² et Expliqué²)
+        print(f"Rs²:{res2:.3f} | Ex²:{ych_my2:.3f}")
+        print("")
 
-    # --- 5. Calculs ANOVA finaux ---
+    # --- 5. Résultats ANOVA ---
+    r2 = sc_reg / sc_tot
+
+    # Degrés de liberté
     ddl_reg = 1
     ddl_res = n - 2
-
-    if ddl_res <= 0:
-        print("Pas assez de points pour ANOVA")
-        return
 
     mc_reg = sc_reg / ddl_reg
     mc_res = sc_res / ddl_res
     mc_tot = sc_tot / (n - 1)
 
-    r2 = sc_reg / sc_tot
-    fc = mc_reg / mc_res
-    delta = sqrt(mc_res)  # Ecart-type résiduel (s)
+    f_calc = mc_reg / mc_res
 
-    # --- 6. Affichage Global ---
-    print("\n" + "=" * 20)
-    print("RESULTATS GLOBAUX")
-    print("=" * 20)
-    print(f"a = {a:.4f}")
-    print(f"b = {b:.4f}")
-    print(f"R2 = {r2:.4f}")
-    print("-" * 20)
-    print("--- SC (Sommes) ---")
-    print(f"SCReg = {sc_reg:.4f}")
-    print(f"SCRes = {sc_res:.4f}")
-    print(f"SCTot = {sc_tot:.4f}")
-    print("-" * 20)
-    print("--- MC (Moyennes) ---")
-    print(f"MCReg = {mc_reg:.4f}")
-    print(f"MCRes = {mc_res:.4f}")
-    print(f"MCTot = {mc_tot:.4f}")
-    print("-" * 20)
-    print(f"Fc = {fc:.4f}")
-    print(f"Delta (s) = {delta:.4f}")
-    print("p = (Voir table Fisher)")
+    print("\n" + "=" * 29)
+    print("   RESULTATS GLOBAUX")
+    print("=" * 29)
+    print(f"moy x = {mx:.3f}")
+    print(f"moy y = {my:.3f}")
+    print(f"a (pente) = {a:.3f}")
+    print(f"b (ordon) = {b:.3f}")
+    print(f"Eq : y = {a:.3f}x + {b:.3f}")
+    print(f"R² = {r2:.3f}")
+
+    print("-" * 29)
+    print(" TABLEAU ANOVA")
+    print("-" * 29)
+    # En-tête
+    print("SRC |    SC    |    MC")
+    print("-" * 29)
+    # Lignes du tableau
+    print(f"Reg | {sc_reg:8.3f} | {mc_reg:8.3f}")
+    print(f"Res | {sc_res:8.3f} | {mc_res:8.3f}")
+    print(f"Tot | {sc_tot:8.3f} | {mc_tot:8.3f}")
+    print("-" * 29)
+    print(f"Fc (Fisher) = {f_calc:.3f}")
+    print("=" * 29)
 
 
-# --- INTERFACE UTILISATEUR ---
-print("\n--- REGRESSION ---")
-try:
-    print("Entrer X (ex: 1 2 3 4):")
-    cx = input("> ")
-    lx = [float(v) for v in cx.split()]
-
-    print("Entrer Y (ex: 2 4 5 4):")
-    cy = input("> ")
-    ly = [float(v) for v in cy.split()]
-
-    calculs_complets(lx, ly)
-
-except ValueError:
-    print("Erreur de saisie !")
-    print("Utilise l'ESPACE pour")
-    print("séparer les nombres.")
+# Lancement auto
+regression()
